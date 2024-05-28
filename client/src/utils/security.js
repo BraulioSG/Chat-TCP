@@ -1,27 +1,21 @@
 function encrypt(msg, key) {
-    let characters = msg.split("");
+    const buff = Buffer.from(msg, 'ascii');
 
-    characters = characters.map(c => {
-        const ascii = c.charCodeAt(0);
+    const encrypted = buff.map(char => {
+        return (char + key) % 256;
+    });
 
-        return String.fromCharCode((ascii + key) % 255);
-    })
-
-    msg = characters.join("");
-    return msg;
+    return encrypted;
 }
 
 function decrypt(code, key) {
-    let characters = code.split("");
+    console.log(code);
 
-    characters = characters.map(c => {
-        const ascii = c.charCodeAt(0);
-
-        return String.fromCharCode((ascii - key) % 255);
+    const decrypted = code.map(char => {
+        return (char - key) % 256;
     })
 
-    code = characters.join("");
-    return code;
+    return decrypted.toString('ascii');
 }
 
 module.exports = { encrypt, decrypt }

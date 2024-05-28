@@ -1,126 +1,148 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <netdb.h>
-#include <signal.h>
+#include <sys/types.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include "security.h"
-#define  DIRSIZE   2048      /* longitud maxima parametro entrada/salida */
-#define  PUERTO    5000	     /* numero puerto arbitrario */
 
-int                  sd, sd_actual;  /* descriptores de sockets */
-int                  addrlen;        /* longitud direcciones */
-struct sockaddr_in   sind, pin;      /* direcciones sockets cliente u servidor */
+#define PORT 8080
+#define MAXLINE 1024
+#define KEY 10
 
+#define CONTROLLER_PORT 3000
+#define CONTROLLER_IP "127.0.0.1"
+#define CONTROLLER_BUFFER_SIZE 1024
 
-void aborta_handler(int sig){
-   printf("....abortando el proceso servidor %d\n",sig);
-   close(sd);  
-   close(sd_actual); 
-   exit(1);
-}
+int main()
+{
 
+    // -------------------- TCP CLIENT <-> CONTROLLER ----------------------------
+    int controllerfd;
+    struct sockaddr_in controller_addr;
+    char controller_buffer[CONTROLLER_BUFFER_SIZE];
+    ssize_t controller_n;
 
-int main(){
-  
-	char  dir[DIRSIZE];	     /* parametro entrada y salida */
+    controllerfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (controllerfd < 0)
+    {
+        perror("socket creation failed");
+        exit(EXIT_FAILURE);
+    }
 
-   if(signal(SIGINT, aborta_handler) == SIG_ERR){
-   	perror("Could not set signal handler");
-      return 1;
-   }
+    // Set up server address
+    memset(&controller_addr, 0, sizeof(controller_addr));
+    controller_addr.sin_family = AF_INET;
+    controller_addr.sin_port = htons(CONTROLLER_PORT);
+    if (inet_pton(AF_INET, CONTROLLER_IP, &controller_addr.sin_addr) <= 0)
+    {
+        perror("invalid address/ Address not supported");
+        close(controllerfd);
+        exit(EXIT_FAILURE);
+    }
+    // ---------------------------------------------------------------------------
 
-	if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-		perror("socket");
-		exit(1);
-	}
+    // ---------------------  UDP SERVER <-> Client ------------------------------
+    char buffer[MAXLINE];
+    struct sockaddr_in servaddr, cliaddr;
+    int listenfd, len, n;
+    int empezar;
+    // ---------------------------------------------------------------------------
 
-	sind.sin_family = AF_INET;
-	sind.sin_addr.s_addr = INADDR_ANY;   /* INADDR_ANY=0x000000 = yo mismo */
-	sind.sin_port = htons(PUERTO);       /*  convirtiendo a formato red */
+    printf("Listening in port number: %d\n", PORT);
+    listenfd = socket(AF_INET, SOCK_DGRAM, 0);
 
-	if (bind(sd, (struct sockaddr *)&sind, sizeof(sind)) == -1) {
-		perror("bind");
-		exit(1);
-	}
+    if (listenfd == -1)
+    {
+        perror("socket creation failed");
+        exit(EXIT_FAILURE);
+    }
 
-	if (listen(sd, 5) == -1) {
-		perror("listen");
-		exit(1);
-	}
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    servaddr.sin_port = htons(PORT);
+    servaddr.sin_family = AF_INET;
 
-	int max=4;
-	pid_t child_pid;
-	for(int i=0;i<max;i++){ //Maximun max client connections
-		/* esperando que un cliente solicite un servicio */
-		if ((sd_actual = accept(sd, (struct sockaddr *)&pin, 
-			&addrlen)) == -1) {
-			perror("accept");
-			exit(1);
-		}
-		child_pid = fork();
-		if(child_pid==0){
-			//soy el hijo
-			break;
-		}else{
-			//soy el padre
-			close(sd_actual);
-		}
-	}
-	if(child_pid==0){
-			if (recv(sd_actual, dir, sizeof(dir), 0) == -1) {
-				perror("recv");
-				exit(1);
-			}
-			
-			printf("rcvd: %s\n", dir);
-			char* decoded = decrypt(dir, 1);
-			 // Define the command to execute the Node.js script with the string argument
-			char command[2048];
-			sprintf(command, "node controller.js \"%s\"", decoded);
-			printf("cmd: %s\n", command);
+    bind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
+    len = sizeof(cliaddr);
 
-			// Open a pipe to capture the standard output of the command
-			FILE *pipe = popen(command, "r");
-			if (!pipe) {
-				fprintf(stderr, "Error opening pipe.\n");
-				return 1;
-			}
+    pid_t child_pid;
 
-			// Read the output of the command from the pipe
-			char output[2048];
-			if (!fgets(output, 2048, pipe)) {
-				fprintf(stderr, "Error reading output from pipe.\n");
-				pclose(pipe);
-				return 1;
-			}
+    while (1)
+    {
+        n = recvfrom(listenfd, buffer, MAXLINE, 0, (struct sockaddr *)&cliaddr, &len);
+        child_pid = fork();
+        if (child_pid == 0)
+        {
+            break;
+        }
+    }
+    if (child_pid == 0)
+    {
+        if (n < 0)
+        {
+            perror("recvfrom failed");
+            exit(EXIT_FAILURE);
+            close(listenfd);
+            return 1;
+        }
+        buffer[n] = '\0';
+        char *decoded = decrypt(buffer, KEY);
 
-			// Close the pipe
-			pclose(pipe);
+        if (strcmp(decoded, "ping") == 0)
+        {
+            char *pong = encrypt("pong", KEY);
+            sendto(listenfd, pong, strlen(pong), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
+            close(listenfd);
 
-			// Print the output
-			printf("Output of the command: %s\n", output);
+            printf("==== NEW PING RECIEVED ====\n");
+            printf("from: %d:%d\n", cliaddr.sin_addr.s_addr, cliaddr.sin_port);
+            printf("===========================\n");
 
+            return 0;
+        }
 
+        printf("\n==== NEW UDP REQ RECIEVED ====\n");
+        printf("from: %d:%d\n", cliaddr.sin_addr.s_addr, cliaddr.sin_port);
+        printf("rcv:  %s\n", buffer);
+        printf("data: %s\n", decoded);
 
-			char* encoded = encrypt(output, 10);
-		
-			if ( send(sd_actual, encoded, strlen(encoded), 0) == -1) {
-				perror("send");
-				exit(1);
-			}
+        if (connect(controllerfd, (struct sockaddr *)&controller_addr, sizeof(controller_addr)) < 0)
+        {
+            perror("connection failed");
+            close(controllerfd);
+            exit(EXIT_FAILURE);
+        }
 
-			free(decoded);
-			free(encoded);
+        send(controllerfd, decoded, strlen(decoded), 0);
+        controller_n = recv(controllerfd, controller_buffer, CONTROLLER_BUFFER_SIZE - 1, 0);
+        if (controller_n < 0)
+        {
+            perror("recv failed");
+            char *error_msg = encrypt("Error in controller", KEY);
+            sendto(listenfd, error_msg, strlen(error_msg), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
+            close(listenfd);
+            return 1;
+        }
 
-		
-			close(sd_actual);  
-		   close(sd);
-		   printf("Conexion cerrada\n");
+        controller_buffer[controller_n] = '\0';
+        char *encoded = encrypt(controller_buffer, KEY);
 
-	}else{
-			//soy el padre
-	   	close(sd);
-	}
-	return 0;
+        sendto(listenfd, encoded, strlen(encoded), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
+
+        printf("=========== RESPONSE ===========\n");
+        printf("to:    %d:%d\n", cliaddr.sin_addr.s_addr, cliaddr.sin_port);
+        printf("data:  %s\n", controller_buffer);
+        printf("send:  %s\n", encoded);
+        printf("================================\n");
+
+        close(listenfd);
+        close(controllerfd);
+    }
+    else
+    {
+        close(listenfd);
+    }
+    return 0;
 }

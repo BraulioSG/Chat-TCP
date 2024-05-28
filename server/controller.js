@@ -1,27 +1,31 @@
-function encrypt(msg, key) {
-    let characters = msg.split("");
+const net = require('net');
 
-    characters = characters.map(c => {
-        const ascii = c.charCodeAt(0);
+// Create a server
+const server = net.createServer((socket) => {
+    console.log('Server connected');
 
-        return String.fromCharCode((ascii + key) % 255);
-    })
+    socket.on('data', (data) => {
+        const req = data.toString('ascii');
+        console.log(`Received: ${req}`);
 
-    msg = characters.join("");
-    return msg;
-}
+        const res = data;
+        socket.write(Buffer.from(res, 'ascii'));
+    });
 
-function decrypt(code, key) {
-    let characters = code.split("");
+    socket.on('end', () => {
+        console.log('Server disconnected');
+    });
 
-    characters = characters.map(c => {
-        const ascii = c.charCodeAt(0);
+    socket.on('error', (err) => {
+        console.error(`Error: ${err.message}`);
+    });
+});
 
-        return String.fromCharCode((ascii - key) % 255);
-    })
+const PORT = 3000;
+server.listen(PORT, () => {
+    console.log(`Controller on port ${PORT}`);
+});
 
-    code = characters.join("");
-    return code;
-}
-
-console.log(decrypt(process.argv[2], 10));
+server.on('error', (err) => {
+    console.error(`Controller error: ${err.message}`);
+});
