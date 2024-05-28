@@ -25,30 +25,15 @@ int main()
     char controller_buffer[CONTROLLER_BUFFER_SIZE];
     ssize_t controller_n;
 
-    controllerfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (controllerfd < 0)
-    {
-        perror("socket creation failed");
-        exit(EXIT_FAILURE);
-    }
-
-    // Set up server address
-    memset(&controller_addr, 0, sizeof(controller_addr));
-    controller_addr.sin_family = AF_INET;
-    controller_addr.sin_port = htons(CONTROLLER_PORT);
-    if (inet_pton(AF_INET, CONTROLLER_IP, &controller_addr.sin_addr) <= 0)
-    {
-        perror("invalid address/ Address not supported");
-        close(controllerfd);
-        exit(EXIT_FAILURE);
-    }
     // ---------------------------------------------------------------------------
 
     // ---------------------  UDP SERVER <-> Client ------------------------------
     char buffer[MAXLINE];
     struct sockaddr_in servaddr, cliaddr;
     int listenfd, len, n;
-    int empezar;
+
+    char clientIP[INET_ADDRSTRLEN];
+    int clientPORT;
     // ---------------------------------------------------------------------------
 
     printf("Listening in port number: %d\n", PORT);
@@ -69,9 +54,30 @@ int main()
 
     pid_t child_pid;
 
+    struct sockaddr_in connectedClients[100];
+    int clientCount = 0;
+
     while (1)
     {
         n = recvfrom(listenfd, buffer, MAXLINE, 0, (struct sockaddr *)&cliaddr, &len);
+
+        int prevConnected = 0;
+        for (int cc = 0; cc < clientCount; cc++)
+        {
+            if (connectedClients[cc].sin_addr.s_addr != cliaddr.sin_addr.s_addr)
+                continue;
+            if (connectedClients[cc].sin_port != cliaddr.sin_port)
+                continue;
+            prevConnected = 1;
+            break;
+        }
+        if (prevConnected == 0)
+        {
+            connectedClients[clientCount] = cliaddr;
+            clientCount += 1;
+            printf("new connection\n");
+        }
+
         child_pid = fork();
         if (child_pid == 0)
         {
@@ -103,10 +109,32 @@ int main()
             return 0;
         }
 
+        // Print the buffer content
+        printf("Buffer content: %s\n", buffer);
+
         printf("\n==== NEW UDP REQ RECIEVED ====\n");
         printf("from: %d:%d\n", cliaddr.sin_addr.s_addr, cliaddr.sin_port);
         printf("rcv:  %s\n", buffer);
         printf("data: %s\n", decoded);
+
+        // ############### CONECTION WITH THE CONTROLLER ################
+        controllerfd = socket(AF_INET, SOCK_STREAM, 0);
+        if (controllerfd < 0)
+        {
+            perror("socket creation failed");
+            exit(EXIT_FAILURE);
+        }
+
+        // Set up server address
+        memset(&controller_addr, 0, sizeof(controller_addr));
+        controller_addr.sin_family = AF_INET;
+        controller_addr.sin_port = htons(CONTROLLER_PORT);
+        if (inet_pton(AF_INET, CONTROLLER_IP, &controller_addr.sin_addr) <= 0)
+        {
+            perror("invalid address/ Address not supported");
+            close(controllerfd);
+            exit(EXIT_FAILURE);
+        }
 
         if (connect(controllerfd, (struct sockaddr *)&controller_addr, sizeof(controller_addr)) < 0)
         {
@@ -117,6 +145,7 @@ int main()
 
         send(controllerfd, decoded, strlen(decoded), 0);
         controller_n = recv(controllerfd, controller_buffer, CONTROLLER_BUFFER_SIZE - 1, 0);
+
         if (controller_n < 0)
         {
             perror("recv failed");
@@ -125,11 +154,15 @@ int main()
             close(listenfd);
             return 1;
         }
+        // ####################################################################3
 
         controller_buffer[controller_n] = '\0';
         char *encoded = encrypt(controller_buffer, KEY);
 
-        sendto(listenfd, encoded, strlen(encoded), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
+        for (int i = 0; i < clientCount; i++)
+        {
+            sendto(listenfd, encoded, strlen(encoded), 0, (struct sockaddr *)&connectedClients[i], sizeof(cliaddr));
+        }
 
         printf("=========== RESPONSE ===========\n");
         printf("to:    %d:%d\n", cliaddr.sin_addr.s_addr, cliaddr.sin_port);

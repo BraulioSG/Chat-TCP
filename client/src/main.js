@@ -1,6 +1,7 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('node:path');
-const client = require('./utils/connection');
+const Client = require('./utils/connection');
+
 
 const createWindow = () => {
     // Create the browser window.
@@ -13,14 +14,27 @@ const createWindow = () => {
     })
 
     // and load the index.html of the app.
-    mainWindow.loadFile('./src/views/home.html')
+    mainWindow.loadFile('./src/views/login.html')
 
     // Open the DevTools.
     // mainWindow.webContents.openDevTools()
+
+    onResponse = (res) => mainWindow.webContents.send('on-server-response', res)
+    return mainWindow
 }
 
 app.whenReady().then(() => {
-    createWindow()
+    const win = createWindow()
+
+    const client = new Client((res) => {
+        win.webContents.send('on-server-response', res)
+    })
+
+    const handleConnection = (_evt, cmd) => {
+        client.send(cmd);
+    }
+
+    ipcMain.on('handle-connection', handleConnection);
 
     app.on('activate', () => {
         // On macOS it's common to re-create a window in the app when the

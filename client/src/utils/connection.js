@@ -1,31 +1,56 @@
 const { encrypt, decrypt } = require("./security");
 
 const dgram = require('dgram');
-const client = dgram.createSocket('udp4'); // For IPv4
 
-const serverPort = 8080;
-const serverAddress = '127.0.0.1';
 
-client.send(encrypt("abcdefghijklmnopqrstuvwxyz1234567890!#$%&/()=?", 10), serverPort, serverAddress, (err) => {
-    if (err) {
-        console.error(err);
-        client.close();
-    } else {
-        console.log('Message sent');
+class Client {
+    constructor(callback) {
+        this.callback = callback;
+        this.client = dgram.createSocket('udp4'); // For IPv4
+
+
+
+        this.serverAddress = '127.0.0.1';
+        this.serverPort = 8080;
+
+        this.key = 10;
+
+        this.client.on('message', (msg, _rinfo) => {
+            const data = decrypt(msg, this.key);
+            this.callback(data);
+        })
+
+        this.client.on('error', (err) => {
+            console.error(`Socket error:\n${err.stack}`);
+            client.close();
+        });
+
+        this.client.on('close', () => {
+            console.log('Socket closed');
+        });
     }
-});
 
-client.on('message', (msg, rinfo) => {
-    console.log(decrypt(msg, 10))
-});
+    send(command) {
+        const req = encrypt(command, this.key);
 
-client.on('error', (err) => {
-    console.error(`Socket error:\n${err.stack}`);
-    client.close();
-});
+        this.client.send(req, this.serverPort, this.serverAddress, (err) => {
+            if (err) {
+                console.error(err);
+                this.client.close();
+            }
 
-client.on('close', () => {
-    console.log('Socket closed');
-});
+            console.log(`sent ${command}`)
+        })
 
-module.exports = client;
+
+
+
+    }
+
+    setCallback(callback) {
+        this.callback = callback;
+    }
+}
+
+
+module.exports = Client

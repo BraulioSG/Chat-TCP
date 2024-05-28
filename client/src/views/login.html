@@ -11,7 +11,7 @@
 <body>
   <img src="./assets/blobs.svg" class="blobs">
 
-  <form>
+  <form id="login-form">
     <div class="form-header">
       <h1>Iniciar Sesión</h1>
       <p>Bienvenido al sistema de comunicación de Pimientos & Co.</p>
@@ -19,19 +19,21 @@
     <div class="form-inputs">
       <div class="form-input" id="user-input">
         <label>Usuario</label>
-        <input type="text" required>
+        <input type="text" required id="userInput">
         <span class="form-input-hint"><small>Usuario del correo de la compañia</small></span>
       </div>
       <div class="form-input" id="password-input">
         <label>Contraseña</label>
-        <input type="password" required>
+        <input type="password" required id="passInput">
       </div>
     </div>
     <div class="form-actionbtns">
-      <button class="primary">Iniciar Sesión</button>
+      <button class="primary" id="submit">Iniciar Sesión</button>
       <a href="">Olvidé mi Contraseña</a>
     </div>
   </form>
+
+  <script src="./login.js"></script>
 </body>
 
 </html>

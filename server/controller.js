@@ -1,15 +1,23 @@
-const net = require('net');
+const net = require('node:net');
+const handler = require('./commandHandler')
 
 // Create a server
 const server = net.createServer((socket) => {
     console.log('Server connected');
 
     socket.on('data', (data) => {
-        const req = data.toString('ascii');
+        const req = data.toString();
         console.log(`Received: ${req}`);
+
+        const tokens = req.split("\t");
+
+        console.log(tokens);
+
+
 
         const res = data;
         socket.write(Buffer.from(res, 'ascii'));
+        socket.destroy();
     });
 
     socket.on('end', () => {
