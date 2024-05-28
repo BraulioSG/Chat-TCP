@@ -2,6 +2,10 @@
 // Created by EUMV on 22/05/2024.
 //
 
+//
+// Created by EUMV on 22/05/2024.
+//
+
 #ifndef SECURITY_H
 #define SECURITY_H
 
@@ -57,6 +61,7 @@ char *decrypt(const char *code, int key)
     {
         decrypted[i] = (char)((unsigned char)code[i] - key);
     }
+    decrypted[size] = '\0'; // Null-terminate the string
     decrypted[size] = '\0'; // Null-terminate the string
 
     // printf("decoded: %s\n", decrypted);
