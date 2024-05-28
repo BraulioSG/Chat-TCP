@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pimientos | Home</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="home.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+</head>
+
+<body>
+    <img src="./assets/blobs.svg" class="blobs">
+    <aside>
+        <div class="search">
+            <div class="search-header">
+                <h3>Canales</h3>
+                <button><i class="material-icons">add_circle_outline</i></button>
+            </div>
+            <div class="searchbar">
+                <input type="text" placeholder="Buscar Conversación">
+                <i id="searchbarIcon" class="material-icons">search</i>
+            </div>
+        </div>
+        <div class="channel-list " id="channel-list">
+
+        </div>
+    </aside>
+    <section class="chat-screen">
+        <header class="chat-info">
+            <div class="chat-info-info">
+                <h2 id="channel-title">Pimientos Chat</h2>
+                <p class="chat-members" id="channel-members">
+                    <small>
+
+                    </small>
+                </p>
+            </div>
+            <div class="chat-requests">
+            </div>
+        </header>
+        <main class="chat-msgs" id="chat">
+        </main>
+        <footer class="chat-input">
+            <input autocomplete="off" type="text" placeholder="Escribe tu mensaje" id="message-input">
+            <button id="SendButton"><i class="material-icons">send</i></button>
+        </footer>
+    </section>
+    <script src="./chat.js"></script>
+</body>
+
+</html>

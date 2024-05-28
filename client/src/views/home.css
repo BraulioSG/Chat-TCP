@@ -1,0 +1,388 @@
+body {
+    background: var(--color-bg);
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+
+    display: flex;
+}
+
+.blobs {
+    opacity: 0.3;
+}
+
+aside {
+    float: left;
+    height: 100vh;
+    width: 300px;
+    display: flex;
+    gap: 20px;
+    flex-direction: column;
+
+    padding: 20px 0;
+
+}
+
+aside .search {
+    padding: 0 20px;
+}
+
+aside .search .search-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+aside .search .search-header button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+
+    padding: 5px;
+    height: 25px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 100px;
+
+    transition: all 0.3s ease;
+}
+
+aside .search .search-header button:hover {
+    transform: scale(1.1);
+}
+
+
+aside .search .search-header button i {
+    font-size: 22px;
+}
+
+
+aside .search .searchbar {
+    position: relative;
+}
+
+aside .search .searchbar #searchbarIcon {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+
+    transform: translateY(-50%);
+    color: #738C7E;
+    font-weight: light;
+}
+
+aside .search .searchbar input {
+    font-size: 14px;
+    width: 100%;
+    background-color: rgba(150, 150, 150, 0.2);
+}
+
+aside .channel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 100%;
+    padding: 20px;
+    overflow-y: auto;
+
+}
+
+aside .channel-list .channel-btn {
+    position: relative;
+    backdrop-filter: blur(5px);
+    background-color: rgba(150, 150, 150, 0.2);
+
+
+    transition: transform 0.3s ease;
+}
+
+aside .channel-list .channel-btn:not(.active):hover {
+    background: radial-gradient(#83C2469f, #83C2467f);
+    transform: scale(1.05);
+}
+
+aside .channel-list .channel-btn:hover .channel-lastmsg {
+    color: black;
+}
+
+aside .channel-list .channel-btn.active {
+    background: radial-gradient(#83C246ff, #83C2469f);
+}
+
+aside .channel-list .channel-btn.active .channel-lastmsg {
+    color: black;
+}
+
+aside .channel-new {
+    width: 100%;
+    padding: 0 20px;
+}
+
+aside .channel-new button {
+    width: 100%;
+}
+
+
+
+
+
+.channel-btn .channel-name,
+.channel-btn .channel-lastmsg {
+    text-align: start;
+    width: 100%;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.channel-btn .channel-name {
+    font-size: 16px;
+}
+
+.channel-btn .channel-lastmsg {
+    font-size: 14px;
+    color: #738C7E;
+    text-align: start;
+    width: 100%;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.channel-btn .notification-badge {
+    background-color: var(--color-accent);
+    color: white;
+    display: inline-block;
+    aspect-ratio: 1;
+    height: 25px;
+    border-radius: 50%;
+    place-items: center;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transform: translate(25%, -25%) scale(0);
+    box-sizing: content-box;
+    border: 3px solid white;
+    transition: all 0.3s cubic-bezier(.26, .91, .53, 1.43);
+}
+
+.channel-btn .notification-badge small {
+    margin-bottom: 20px;
+}
+
+.unread .notification-badge {
+
+    transform: translate(25%, -25%) scale(1);
+
+}
+
+.chat-screen {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+
+.chat-info {
+    width: 100%;
+    background-color: rgba(250, 250, 250, 0.3);
+    backdrop-filter: blur(2px);
+    position: absolute;
+    top: 0;
+    z-index: 10;
+}
+
+.chat-info .chat-info-info {
+    padding: 20px;
+
+}
+
+.chat-info .chat-info-info h2,
+.chat-info .chat-info-info p {
+    text-align: start;
+    width: 100%;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+
+}
+
+.chat-info .chat-requests {
+    width: 100%;
+    position: relative;
+}
+
+.chat-info .chat-requests .chat-req {
+    padding: 10px 20px;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    position: relative;
+    background-color: #98ddb79f;
+    gap: 5px;
+
+    animation: 0.3s req-appear ease;
+}
+
+.chat-info .chat-requests .chat-req p {
+    text-align: start;
+    width: 100%;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+
+}
+
+.chat-info .chat-requests .chat-req button {
+    width: 50px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    justify-content: center;
+    color: white;
+}
+
+.chat-info .chat-requests .chat-req button.approve {
+    background-color: rgba(2, 188, 27, 0.7);
+}
+
+.chat-info .chat-requests .chat-req button.destroy {
+    background-color: rgba(188, 2, 2, 0.7);
+}
+
+.chat-msgs {
+    height: 100%;
+    width: 100%;
+
+    overflow: auto;
+}
+
+.chat-msgs .channel {
+    width: 100%;
+    padding: 10px;
+    min-height: 100%;
+    flex-direction: column;
+    justify-content: start;
+
+    display: none;
+}
+
+.chat-msgs .channel.active {
+    display: flex;
+}
+
+
+.chat-msgs .channel::before {
+    content: "";
+    height: 90px;
+}
+
+.chat-msgs .channel::after {
+    content: "";
+    height: 100px;
+}
+
+.chat-msgs .channel .system-msg {
+    background-color: rgba(100, 100, 100, 0.15);
+    text-align: center;
+}
+
+.chat-input {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background-color: rgba(250, 250, 250, 0.1);
+    backdrop-filter: blur(5px);
+    padding: 20px;
+    display: flex;
+    gap: 20px
+}
+
+.chat-input input {
+    width: 100%;
+    background-color: rgba(200, 200, 200, 0.5);
+    border-radius: 150px;
+    font-size: 14px;
+    padding: 0 20px;
+}
+
+#SendButton {
+    background-color: var(--color-accent);
+    height: 100%;
+    aspect-ratio: 1/1;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+}
+
+#SendButton i {
+    color: black;
+    margin-left: 5px;
+    margin-bottom: 2px;
+}
+
+
+
+.msg-chunk {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+}
+
+.msg-chunk.me-chunk {
+    align-items: flex-end;
+}
+
+
+.msg-author {
+    width: fit-content;
+}
+
+.msg-chunk .msg {
+    background-color: white;
+    box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.25);
+    width: fit-content;
+    max-width: 500px;
+    padding: 10px;
+
+    border-radius: 5px;
+    transform-origin: top left;
+
+    animation: 0.3s msg-appear cubic-bezier(.26, .91, .53, 1.43);
+}
+
+.me-chunk .msg {
+    background-color: var(--color-accent);
+    transform-origin: top right;
+    box-shadow: -3px 3px 0px rgba(0, 0, 0, 0.25);
+
+}
+
+@keyframes msg-appear {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes req-appear {
+    from {
+        transform: translate(100%);
+    }
+
+    to {
+        transform: translate(0);
+    }
+}

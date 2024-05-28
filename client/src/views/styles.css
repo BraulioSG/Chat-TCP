@@ -1,0 +1,104 @@
+@font-face {
+    font-family: Poppins;
+    src: url("../assets/fonts/Poppins/Poppins-Regular.ttf");
+    font-weight: 400;
+}
+
+@font-face {
+    font-family: Poppins;
+    src: url("../assets/fonts/Poppins/Poppins-Light.ttf");
+    font-weight: light;
+}
+
+:root {
+    --color-text: #070A03;
+    --color-bg: #fbfdf9;
+    --color-accent: #83c246;
+    --color-link: #2C28FF;
+    --color-primary: #98ddb7;
+    --color-secondary: #78D3B8;
+}
+
+/* width */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    border-radius: 10px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: transparent;
+    transition: all 0.3s ease;
+    border-radius: 10px;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+
+    font-family: Poppins;
+    box-sizing: border-box;
+
+    scroll-behavior: smooth;
+}
+
+
+
+.blobs {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 150vw;
+    height: 150vh;
+    object-fit: cover;
+    z-index: -1;
+}
+
+a,
+a:visited {
+    color: var(--color-link);
+}
+
+button {
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+}
+
+button.primary {
+    background-color: var(--color-accent);
+}
+
+button.secondary {
+    border: 2px solid var(--color-accent);
+    color: var(--color-accent);
+    font-weight: bold;
+}
+
+label {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+input {
+    border: none;
+    outline: none;
+    font-size: 18px;
+    padding: 7px 10px;
+    border-radius: 10px;
+}
+
+.form-input-hint {
+    font-size: 12px;
+    color: #738C7E;
+}
