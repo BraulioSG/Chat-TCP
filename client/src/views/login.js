@@ -18,7 +18,7 @@ form.onsubmit = (evt) => {
     //todo: validate user and password
     window.connectionAPI.connect(`auth/lgin:user=${user}&pass=${pass}`);
 
-    sendToHomePage();
+    //sendToHomePage();
 }
 
 window.connectionAPI.onResponse((res) => {
