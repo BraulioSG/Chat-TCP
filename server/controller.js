@@ -12,7 +12,7 @@ const server = net.createServer((socket) => {
         //Command handler
         //1. Response of Broadcast
         //2. TO userid1 userid2 userid3 useridn 
-        //3. SART
+        //3. START
 
         //4. Split data en chunks de 1024
         /*
@@ -26,16 +26,17 @@ const server = net.createServer((socket) => {
         socket.write(Buffer.from("RESPONSE", 'ascii'));
         socket.write(Buffer.from("TO", 'ascii')); //agregar los usuarios
         socket.write(Buffer.from("START", 'ascii'));
-
-        /*
-        while (content) {
-            socket.write(Buffer.from(res, 'ascii'));
+        try {
+            const data = fs.readFileSync('./file.json', 'ascii');
+            const buff = Buffer.from(data, 'ascii')
+            for (let i = 0; i < buff.length; i += 1024) {
+                const chunks = buff.slice(i, i + 1024)
+                socket.write(chunks);
+            }
+        } catch (errr) {
+            console.log(err);
         }
-        */
-
         socket.write(Buffer.from("END", 'ascii'));
-
-
         socket.destroy();
     });
 
