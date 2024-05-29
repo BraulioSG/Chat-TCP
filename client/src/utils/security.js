@@ -10,13 +10,10 @@ function encrypt(msg, key) {
 
 function decrypt(code, key) {
 
-    console.log(code);
     const decrypted = code.map(char => {
-        console.log(char);
         return (char - key) % 256;
     })
 
-    console.log(decrypted)
 
     return decrypted.toString('ascii');
 }

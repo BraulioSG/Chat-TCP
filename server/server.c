@@ -145,6 +145,7 @@ int main()
         }
 
         send(controllerfd, decoded, strlen(decoded), 0);
+
         controller_n = recv(controllerfd, controller_buffer, CONTROLLER_BUFFER_SIZE - 1, 0);
 
         if (controller_n < 0)
@@ -158,19 +159,51 @@ int main()
         // ####################################################################3
 
         controller_buffer[controller_n] = '\0';
+
         char *encoded = encrypt(controller_buffer, KEY);
+        sendto(listenfd, encoded, strlen(encoded), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
 
-        for (int i = 0; i < clientCount; i++)
+        int broadcast = 0;
+
+        if (strcmp(controller_buffer, "BROADCAST") == 0)
+            broadcast = 1;
+
+        while ((controller_n = recv(controllerfd, controller_buffer, CONTROLLER_BUFFER_SIZE - 1, 0)) > 0)
         {
-            sendto(listenfd, encoded, strlen(encoded), 0, (struct sockaddr *)&connectedClients[i], sizeof(cliaddr));
+
+            if (controller_n < 0)
+            {
+                perror("recv failed");
+                char *error_msg = encrypt("Error in controller", KEY);
+                sendto(listenfd, error_msg, strlen(error_msg), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
+                close(listenfd);
+                return 1;
+            }
+
+            controller_buffer[controller_n] = '\0';
+            printf("buffer: %s\n", controller_buffer);
+
+            char *encoded = encrypt(controller_buffer, KEY);
+
+            if (broadcast)
+            {
+                for (int i = 0; i < clientCount; i++)
+                {
+                    sendto(listenfd, encoded, strlen(encoded), 0, (struct sockaddr *)&connectedClients[i], sizeof(cliaddr));
+                }
+            }
+            else
+            {
+                sendto(listenfd, encoded, strlen(encoded), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
+            }
+
+            /*
+            printf("=========== RESPONSE ===========\n");
+            printf("data:  %s\n", controller_buffer);
+            printf("send:  %s\n", encoded);
+            printf("================================\n");
+            */
         }
-
-        printf("=========== RESPONSE ===========\n");
-        printf("to:    %d:%d\n", cliaddr.sin_addr.s_addr, cliaddr.sin_port);
-        printf("data:  %s\n", controller_buffer);
-        printf("send:  %s\n", encoded);
-        printf("================================\n");
-
         close(listenfd);
         close(controllerfd);
     }
