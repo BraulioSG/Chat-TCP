@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include "security.h"
 
-#define PORT 8080
+#define DEFAULT_PORT 8080
 #define MAXLINE 1024
 #define KEY 10
 
@@ -16,16 +16,18 @@
 #define CONTROLLER_IP "127.0.0.1"
 #define CONTROLLER_BUFFER_SIZE 1024
 
-int main()
+int main(int argc, char *argv[])
 {
+    int port = DEFAULT_PORT;
+    if (argc > 1) {
+        port = atoi(argv[1]);
+    }
 
     // -------------------- TCP CLIENT <-> CONTROLLER ----------------------------
     int controllerfd;
     struct sockaddr_in controller_addr;
     char controller_buffer[CONTROLLER_BUFFER_SIZE];
     ssize_t controller_n;
-
-    // ---------------------------------------------------------------------------
 
     // ---------------------  UDP SERVER <-> Client ------------------------------
     char buffer[MAXLINE];
@@ -34,9 +36,8 @@ int main()
 
     char clientIP[INET_ADDRSTRLEN];
     int clientPORT;
-    // ---------------------------------------------------------------------------
 
-    printf("Listening in port number: %d\n", PORT);
+    printf("Listening on port number: %d\n", port);
     listenfd = socket(AF_INET, SOCK_DGRAM, 0);
 
     if (listenfd == -1)
@@ -46,7 +47,7 @@ int main()
     }
 
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htons(PORT);
+    servaddr.sin_port = htons(port);
     servaddr.sin_family = AF_INET;
 
     bind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
@@ -103,8 +104,8 @@ int main()
             sendto(listenfd, pong, strlen(pong), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
             close(listenfd);
 
-            printf("==== NEW PING RECIEVED ====\n");
-            printf("from: %d:%d\n", cliaddr.sin_addr.s_addr, cliaddr.sin_port);
+            printf("==== NEW PING RECEIVED ====\n");
+            printf("from: %s:%d\n", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port));
             printf("===========================\n");
 
             return 0;
@@ -113,12 +114,12 @@ int main()
         // Print the buffer content
         printf("Buffer content: %s\n", buffer);
 
-        printf("\n==== NEW UDP REQ RECIEVED ====\n");
-        printf("from: %d:%d\n", cliaddr.sin_addr.s_addr, cliaddr.sin_port);
+        printf("\n==== NEW UDP REQ RECEIVED ====\n");
+        printf("from: %s:%d\n", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port));
         printf("rcv:  %s\n", buffer);
         printf("data: %s\n", decoded);
 
-        // ############### CONECTION WITH THE CONTROLLER ################
+        // ############### CONNECTION WITH THE CONTROLLER ################
         controllerfd = socket(AF_INET, SOCK_STREAM, 0);
         if (controllerfd < 0)
         {
@@ -166,7 +167,7 @@ int main()
         }
 
         printf("=========== RESPONSE ===========\n");
-        printf("to:    %d:%d\n", cliaddr.sin_addr.s_addr, cliaddr.sin_port);
+        printf("to:    %s:%d\n", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port));
         printf("data:  %s\n", controller_buffer);
         printf("send:  %s\n", encoded);
         printf("================================\n");
