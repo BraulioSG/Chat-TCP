@@ -11,9 +11,9 @@ function handleCommmand(command) {
     case "auth":
       switch (service[1]) {
         case "lgin":
-          const info = separated_data[1].split("&")
-          const user = info[0].split("=")
-          const pass = info[1].split("=")
+          let info = separated_data[1].split("&")
+          let user = info[0].split("=")
+          let pass = info[1].split("=")
           let user_id = db.login(user[1], pass[1])
           if (user_id != null) {
             return res = {
@@ -44,7 +44,7 @@ function handleCommmand(command) {
     case "usrs":
       switch (service[1]) {
         case "info":
-          token = separated_data[1].split('=')
+          let token = separated_data[1].split('=')
           let data = db.getUserInformation(token[1], "info")
           if (data != null) {
             return res = {
@@ -89,10 +89,10 @@ function handleCommmand(command) {
     case "msgs":
       switch (service[1]) {
         case "send":
-          info = separated_data[1].split("&")
-          ch_name = info[0].split("=")
-          token = info[1].split("=")
-          body = info[2].split('=')
+          let info = separated_data[1].split("&")
+          let ch_name = info[0].split("=")
+          let token = info[1].split("=")
+          let body = info[2].split('=')
           let data = db.newMessage(ch_name[1], token[1], body[1])
           if (data != null) {
             return res = {
@@ -109,14 +109,14 @@ function handleCommmand(command) {
     case "chns":
       switch (service[1]) {
         case "crte":
-          info = separated_data[1].split("&")
-          ch_name = info[0].split("=")
-          token = info[1].split("=")
-          ch_id = db.addChannelToDb(ch_name[1], token[1])
-          if (ch_id != null) {
+          let info = separated_data[1].split("&")
+          let ch_name = info[0].split("=")
+          let token = info[1].split("=")
+          let data = db.addChannelToDb(ch_name[1], token[1])
+          if (data != null) {
             return res = {
               error: "null",
-              data: ch_id
+              data: data
             }
           }
           return res = {
@@ -127,7 +127,7 @@ function handleCommmand(command) {
           info = separated_data[1].split("&")
           ch_name = info[0].split("=")
           token = info[1].split("=")
-          let data = db.newRequestToJoin(ch_name[1], token[1])
+          data = db.newRequestToJoin(ch_name[1], token[1])
           if (data != null) {
             return res = {
               error: "null",
