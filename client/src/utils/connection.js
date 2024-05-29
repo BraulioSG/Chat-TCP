@@ -8,8 +8,6 @@ class Client {
         this.callback = callback;
         this.client = dgram.createSocket('udp4'); // For IPv4
 
-
-
         this.serverAddress = '127.0.0.1';
         this.serverPort = 8080;
 
@@ -41,10 +39,6 @@ class Client {
 
             console.log(`sent ${command}`)
         })
-
-
-
-
     }
 
     setCallback(callback) {

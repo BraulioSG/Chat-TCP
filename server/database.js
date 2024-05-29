@@ -8,18 +8,12 @@ function signupUser(username, password) {
     return addNewItemTo(USER_PATH, "usr", {
         username,
         password,
-
-        last_conn: {
-            port: null,
-            addr: null
-        },
-
         requests: [],
         channels: []
     })
 }
 
-function login(username, password, connection) {
+function login(username, password) {
     const user = getExistingItemsWhere(USER_PATH, { username, password })[0];
 
     if (!user) return null;

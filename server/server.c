@@ -93,6 +93,7 @@ int main()
             close(listenfd);
             return 1;
         }
+
         buffer[n] = '\0';
         char *decoded = decrypt(buffer, KEY);
 

@@ -2,7 +2,9 @@ const userInput = document.getElementById("userInput");
 const passInput = document.getElementById("passInput");
 const form = document.getElementById("login-form");
 
-
+function sendToHomePage() {
+    window.location.href = window.location.href.replace("login", "home");
+}
 
 form.onsubmit = (evt) => {
     evt.preventDefault();
@@ -15,6 +17,8 @@ form.onsubmit = (evt) => {
 
     //todo: validate user and password
     window.connectionAPI.connect(`auth/lgin:user=${user}&pass=${pass}`);
+
+    sendToHomePage();
 }
 
 window.connectionAPI.onResponse((res) => {

@@ -1,5 +1,4 @@
 const fs = require('node:fs');
-const { validateHeaderName } = require('node:http');
 
 function parseId(num) {
     if (id < 10) {
@@ -96,7 +95,7 @@ function getExistingItemsWhere(filename, query) {
         valid = true;
 
         keys.forEach(key => {
-            if (id[key] !== query[key]) {
+            if (item[key] !== query[key]) {
                 valid = false;
                 return;
             }

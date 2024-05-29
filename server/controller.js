@@ -9,14 +9,33 @@ const server = net.createServer((socket) => {
         const req = data.toString();
         console.log(`Received: ${req}`);
 
-        const tokens = req.split("\t");
+        //Command handler
+        //1. Response of Broadcast
+        //2. TO userid1 userid2 userid3 useridn 
+        //3. SART
 
-        console.log(tokens);
+        //4. Split data en chunks de 1024
+        /*
+        {
+            error: string | null,
+            data: object
+        }
+        */
+        //5. END
+
+        socket.write(Buffer.from("RESPONSE", 'ascii'));
+        socket.write(Buffer.from("TO", 'ascii')); //agregar los usuarios
+        socket.write(Buffer.from("START", 'ascii'));
+
+        /*
+        while (content) {
+            socket.write(Buffer.from(res, 'ascii'));
+        }
+        */
+
+        socket.write(Buffer.from("END", 'ascii'));
 
 
-
-        const res = data;
-        socket.write(Buffer.from(res, 'ascii'));
         socket.destroy();
     });
 
