@@ -1,5 +1,6 @@
 const net = require('node:net');
-const handler = require('./commandHandler')
+const fs = require('node:fs')
+const { handleCommand } = require('./commandHandler')
 
 // Create a server
 const server = net.createServer((socket) => {
@@ -9,6 +10,8 @@ const server = net.createServer((socket) => {
         const req = data.toString();
         console.log(`Received: ${req}`);
 
+        const res = handleCommand(req);
+        fs.appendFileSync('./file.json', res, 'utf8')
         //Command handler
         //1. Response of Broadcast
         //2. TO userid1 userid2 userid3 useridn 

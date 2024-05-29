@@ -39,6 +39,8 @@ function getUserInformation(token, type) {
 function getChannelInformation(channel, type) {
     let ch = getExistingItem(CHANNEL_PATH, channel);
 
+    if (!ch) return null;
+
     switch (type) {
         case "msgs":
             return ch.messages;
@@ -63,7 +65,7 @@ function newRequestToJoin(channel, token) {
     let user = getExistingItemsWhere(USER_PATH, { token })[0];
     let ch = getExistingItem(CHANNEL_PATH, channel);
 
-    if (!user) return null;
+    if (!user || !ch) return null;
     user.requests.push({ channel })
     ch.requests.push({ token })
     editExistingItem(USER_PATH, token, {
@@ -72,21 +74,24 @@ function newRequestToJoin(channel, token) {
     editExistingItem(CHANNEL_PATH, channel, {
         requests: ch.requests
     })
-
+    return "Request Send!"
 }
 
 function expelUser(channel, token) {
     let u = getExistingItemsWhere(USER_PATH, { token })[0];
     let ch = getExistingItem(CHANNEL_PATH, channel);
 
+    if (!user || !ch) return null;
     ch.members = ch.members.filter(m => { m != token })
     u.channels = u.channels.filter(c => { c != channel })
+    return "User expeled!"
 }
 
 function acccpetUser(channel, token) {
     let u = getExistingItemsWhere(USER_PATH, { token })[0];
     let ch = getExistingItem(CHANNEL_PATH, channel);
 
+    if (!user || !ch) return null;
     u.channels.push(channel)
     u.requests = u.requests.filter(r => { r != channel })
     ch.members.push(token)
@@ -101,12 +106,14 @@ function acccpetUser(channel, token) {
         requests: u.requests,
         channels: u.channels
     })
+    return "User has been acepted!"
 }
 
 function rejectUser(channel, token) {
     let u = getExistingItemsWhere(USER_PATH, { token })[0];
     let ch = getExistingItem(CHANNEL_PATH, channel);
 
+    if (!user || !ch) return null;
     u.requests = u.requests.filter(r => { r != channel })
     ch.requests = ch.requests.filter(r => { r != token })
 
@@ -119,16 +126,19 @@ function rejectUser(channel, token) {
         requests: u.requests,
         channels: u.channels
     })
+    return "User has been rejected!"
 }
 
 function deleteChannelFromDb(channel, token) {
     const ch = getExistingItem(CHANNEL_PATH, channel)
+
+    if (!ch) return null;
     if (ch.coordinator === token) {
         deleteExistingItem(CHANNEL_PATH, channel)
-        return // confirmacion de eliminacion
+        return "Channel deleted correctly!"
     }
     else {
-        return // "No eres el coordinador de este canal"
+        return "You have no perms to do this!"
     }
 }
 
