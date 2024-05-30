@@ -9,22 +9,6 @@ const server = net.createServer((socket) => {
         const req = data.toString();
         console.log(`Received: ${req}`);
 
-        //Command handler
-        //1. Response of Broadcast
-        //2. TO userid1 userid2 userid3 useridn 
-        //3. SART
-
-        //4. Split data en chunks de 1024
-        /*
-        {
-            error: string | null,
-            data: object
-        }
-        */
-        //5. END
-
-
-
 
         socket.write(Buffer.from("RESPONSE\n", 'ascii'));
         socket.write(Buffer.from("TO usr-001 usr-002\n", 'ascii')); //agregar los usuarios

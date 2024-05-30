@@ -28,13 +28,22 @@ app.whenReady().then(() => {
 
     const client = new Connection((res) => {
         const [type, to, _start, ...json] = res.split("\n")
-        const members = to.split(" ");
+        const members = to.trim().split(" ");
         json.pop();
 
-        console.log(json);
+        console.log(res);
 
-        if (type === "RESPONSE" || members.indexOf(userId) !== -1) {
-            win.webContents.send('on-server-response', JSON.parse(json.join("\n")))
+        const data = JSON.parse(json.join("\n"))
+
+        if (data.desc === "auth/lgin" || data.desc === "auth/sgup") {
+            if (data.err !== "null") {
+                userId = data.data.userId;
+            }
+        }
+
+        console.log("\n\n");
+        if (type === "RESPONSE" || members.length <= 1 || members.indexOf(userId) !== -1) {
+            win.webContents.send('on-server-response', data)
         }
     }, 8080, 8081)
 

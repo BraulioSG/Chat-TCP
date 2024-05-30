@@ -1,6 +1,7 @@
 const { join } = require("path");
 const { encrypt, decrypt } = require("./security");
 const dgram = require('dgram');
+const { clearInterval } = require("timers");
 
 class Server {
 
@@ -26,10 +27,8 @@ class Server {
             else {
                 this.response = this.response.concat(data);
                 if (data.endsWith("\nEND")) {
-
                     callback(this.response);
                     this.response = "";
-
                 }
             }
         })
@@ -38,16 +37,22 @@ class Server {
 
     send(data) {
         this.client.send(encrypt(data, 10), this.port, this.address, (err) => {
+            console.log(`sent ${data} from ${this.port}`)
             if (err) {
+                console.log("error on send");
                 this.available = false;
-                this.client.close();
+                //this.client.close();
+            }
+            else {
+                this.available = true;
             }
         })
 
         this.timeout = setTimeout(() => {
             this.available = false;
+            console.log(`server timeout ${this.port}`)
             //this.client.close();
-        }, 100)
+        }, 500)
     }
 }
 
@@ -66,10 +71,9 @@ class Connection {
         const sendPing = (server) => {
             return new Promise((resolve, reject) => {
                 server.send("ping");
-
                 setTimeout(() => {
                     resolve(server.available);
-                }, 110)
+                }, 100)
             })
         }
 
@@ -79,20 +83,30 @@ class Connection {
                 servers.push(this.servers[i]);
             }
         }
-
         return servers;
     }
 
     async send(command) {
-        const servers = await this.getAvailableServer();
+        let servers = await this.getAvailableServer();
+        console.log(servers.map(s => s.port));
 
         if (servers.length < 1) {
-            console.log("no servers available")
-            return null;
+            const interval = setInterval(async () => {
+                console.log("no servers available")
+                console.log("couldn't send " + command)
+                servers = await this.getAvailableServer();
+
+                if (servers.length >= 1) {
+                    servers[0].send(command);
+                    clearInterval;
+                }
+            }, 1000)
+
+        } else {
+            servers[0].send(command);
         }
 
-        console.log(servers.map(server => server.port));
-        servers[0].send(command);
+
     }
 
     setCallback(callback) {

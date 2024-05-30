@@ -1,10 +1,10 @@
 const fs = require('node:fs');
 
 function parseId(num) {
-    if (id < 10) {
+    if (num < 10) {
         return `00${num}`;
     }
-    if (id < 100) {
+    if (num < 100) {
         return `0${num}`;
     }
     return num.toString();
@@ -18,18 +18,23 @@ function addNewItemTo(filename, idPrefix, obj) {
     const data = fs.readFileSync(filename);
     const json = JSON.parse(data);
 
+
     let newId = "000";
     if (json.length <= 0) {
         newId = "001";
     }
     else {
         const lastIdx = json[json.length - 1].id;
-        newId = parseId(parseInt(lastIdx));
+        const idxNum = lastIdx.split("-")[1];
+        newId = parseId(parseInt(idxNum) + 1);
     }
 
     obj.id = `${idPrefix}-${newId}`
 
-    fs.writeFileSync(filename, JSON.stringify(json), "utf8");
+    json.push(obj);
+
+    fs.writeFileSync(filename, JSON.stringify(json), "ascii");
+
 
     return obj.id;
 }
@@ -50,9 +55,6 @@ function editExistingItem(filename, id, obj) {
             break;
         }
     }
-
-    console.log(json)
-
     fs.writeFileSync(filename, JSON.stringify(json), "utf8");
 }
 
@@ -64,7 +66,7 @@ function getExistingItem(filename, id) {
     const data = fs.readFileSync(filename);
     const json = JSON.parse(data);
 
-    return json.filter(item => item.id === id);
+    return json.filter(item => item.id === id)[0];
 }
 
 function deleteExistingItem(filename, id) {

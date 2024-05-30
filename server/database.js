@@ -1,4 +1,4 @@
-const { getExistingItem, getExistingItemsWhere, deleteExistingItem, addNewItemTo, editExistingItem } = require("./filemanager");
+const { getExistingItem, getExistingItemsWhere, deleteExistingItem, addNewItemTo, editExistingItem, getAllCollection } = require("./filemanager");
 
 const USER_PATH = "../DB/users.json"
 const CHANNEL_PATH = "../DB/channels.json"
@@ -14,15 +14,18 @@ function signupUser(username, password) {
 }
 
 function login(username, password) {
-    const user = getExistingItemsWhere(USER_PATH, { username, password })[0];
+    const user = getExistingItemsWhere(USER_PATH, { username })[0];
 
-    if (!user) return null;
+    if (!user) return [];
+    if (user.password !== password) {
+        return null;
+    }
 
     return user.id;
 }
 
-function getUserInformation(token, type) {
-    let user = getExistingItemsWhere(USER_PATH, { token })[0];
+function getUserInformation(id, type) {
+    let user = getExistingItemsWhere(USER_PATH, { id })[0];
 
     if (!user) return null;
 
@@ -42,10 +45,15 @@ function getChannelInformation(channel, type) {
     if (!ch) return null;
 
     switch (type) {
+        case "info":
+            return ch;
         case "msgs":
             return ch.messages;
         case "reqs":
-            return ch.request;
+            return ch.requests.map(req => {
+                const usr = getUserInformation(req, "info");
+                return { channel: ch, user: usr }
+            });
         case "mems":
             return ch.members;
     }
@@ -61,79 +69,95 @@ function addChannelToDb(name, coordinator) {
     })
 }
 
-function newRequestToJoin(channel, token) {
-    let user = getExistingItemsWhere(USER_PATH, { token })[0];
+function newRequestToJoin(channel, id) {
+    let user = getExistingItem(USER_PATH, id);
     let ch = getExistingItem(CHANNEL_PATH, channel);
 
     if (!user || !ch) return null;
-    user.requests.push({ channel })
-    ch.requests.push({ token })
-    editExistingItem(USER_PATH, token, {
+    user.requests.push(channel)
+    ch.requests.push(id)
+    editExistingItem(USER_PATH, id, {
         requests: user.requests
     })
     editExistingItem(CHANNEL_PATH, channel, {
         requests: ch.requests
     })
-    return "Request Send!"
+    return { channel, user }
 }
 
-function expelUser(channel, token) {
-    let u = getExistingItemsWhere(USER_PATH, { token })[0];
+function expelUser(channel, id) {
+    let u = getExistingItemsWhere(USER_PATH, { id })[0];
     let ch = getExistingItem(CHANNEL_PATH, channel);
 
     if (!user || !ch) return null;
-    ch.members = ch.members.filter(m => { m != token })
+    ch.members = ch.members.filter(m => { m != id })
     u.channels = u.channels.filter(c => { c != channel })
     return "User expeled!"
 }
 
-function acccpetUser(channel, token) {
-    let u = getExistingItemsWhere(USER_PATH, { token })[0];
+function acccpetUser(channel, id) {
+    let u = getExistingItem(USER_PATH, id);
     let ch = getExistingItem(CHANNEL_PATH, channel);
 
-    if (!user || !ch) return null;
+    if (!u || !ch) return null;
+
+
     u.channels.push(channel)
-    u.requests = u.requests.filter(r => { r != channel })
-    ch.members.push(token)
-    ch.requests = ch.requests.filter(r => { r != token })
+    ch.members.push(id)
+
+
+    u.requests = u.requests.filter((uid) => {
+        return uid !== channel;
+    });
+    ch.requests = ch.requests.filter((chid) => {
+        console.log(`comparing: ${chid} - ${id} === ${chid !== id}`)
+        return chid !== id;
+    })
+
+    console.log(`ch -> ${ch.requests}`)
 
     editExistingItem(CHANNEL_PATH, channel, {
         members: ch.members,
-        request: ch.request
+        requests: ch.requests,
     })
 
-    editExistingItem(USER_PATH, token, {
+    editExistingItem(USER_PATH, id, {
         requests: u.requests,
         channels: u.channels
     })
-    return "User has been acepted!"
+    return { status: "accepted", channel: ch, user: u }
 }
 
-function rejectUser(channel, token) {
-    let u = getExistingItemsWhere(USER_PATH, { token })[0];
+function rejectUser(channel, id) {
+    let u = getExistingItemsWhere(USER_PATH, { id })[0];
     let ch = getExistingItem(CHANNEL_PATH, channel);
 
     if (!user || !ch) return null;
-    u.requests = u.requests.filter(r => { r != channel })
-    ch.requests = ch.requests.filter(r => { r != token })
+    u.requests = u.requests.filter((uid) => {
+        return uid !== channel;
+    });
+    ch.requests = ch.requests.filter((chid) => {
+        console.log(`comparing: ${chid} - ${id} === ${chid !== id}`)
+        return chid !== id;
+    })
 
     editExistingItem(CHANNEL_PATH, channel, {
         members: ch.members,
-        request: ch.request
+        requests: ch.requests
     })
 
-    editExistingItem(USER_PATH, token, {
+    editExistingItem(USER_PATH, id, {
         requests: u.requests,
         channels: u.channels
     })
     return "User has been rejected!"
 }
 
-function deleteChannelFromDb(channel, token) {
+function deleteChannelFromDb(channel, id) {
     const ch = getExistingItem(CHANNEL_PATH, channel)
 
     if (!ch) return null;
-    if (ch.coordinator === token) {
+    if (ch.coordinator === id) {
         deleteExistingItem(CHANNEL_PATH, channel)
         return "Channel deleted correctly!"
     }
@@ -144,11 +168,19 @@ function deleteChannelFromDb(channel, token) {
 
 function newMessage(channel, author, body) {
     let ch = getExistingItem(CHANNEL_PATH, channel);
+
+    console.log(ch);
     ch.messages.push({ author, body })
 
     editExistingItem(CHANNEL_PATH, channel, {
         messages: ch.messages
     })
+
+    return { channel, author, body }
+}
+
+function getAllChannels() {
+    return getAllCollection(CHANNEL_PATH);
 }
 
 module.exports = {
@@ -162,5 +194,6 @@ module.exports = {
     expelUser,
     acccpetUser,
     rejectUser,
-    newMessage
+    newMessage,
+    getAllChannels
 }

@@ -1,7 +1,6 @@
 const net = require('node:net');
 const fs = require('node:fs')
-const { handleCommand } = require('./commandHandler');
-const { json } = require('stream/consumers');
+const handleCommand = require('./commandHandler');
 
 // Create a server
 const server = net.createServer((socket) => {
@@ -11,11 +10,13 @@ const server = net.createServer((socket) => {
         const req = data.toString();
         console.log(`Received: ${req}`);
 
-        const res = handleCommand(req);
+        const { to, type, ...res } = handleCommand(req);
 
-        socket.write(Buffer.from("RESPONSE", 'ascii'));
-        socket.write(Buffer.from("TO", 'ascii')); //agregar los usuarios
-        socket.write(Buffer.from("START", 'ascii'));
+        console.log(to);
+
+        socket.write(Buffer.from(`${type}\n`, 'ascii'));
+        socket.write(Buffer.from(`TO ${to.join(" ")}\n`, 'ascii')); //agregar los usuarios
+        socket.write(Buffer.from("START\n", 'ascii'));
         try {
             const data = JSON.stringify(res);
             const buff = Buffer.from(data, 'ascii')
@@ -26,7 +27,7 @@ const server = net.createServer((socket) => {
         } catch (errr) {
             console.log(err);
         }
-        socket.write(Buffer.from("END", 'ascii'));
+        socket.write(Buffer.from("\nEND", 'ascii'));
         socket.destroy();
     });
 

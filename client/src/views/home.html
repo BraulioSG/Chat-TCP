@@ -16,7 +16,7 @@
         <div class="search">
             <div class="search-header">
                 <h3>Canales</h3>
-                <button><i class="material-icons">add_circle_outline</i></button>
+                <button onclick="toggleNewChannelMenu()"><i class="material-icons">add_circle_outline</i></button>
             </div>
             <div class="searchbar">
                 <input type="text" placeholder="Buscar Conversación">
@@ -47,6 +47,19 @@
             <button id="SendButton"><i class="material-icons">send</i></button>
         </footer>
     </section>
+    <div class="newChannelPopup">
+        <div class="newChannelPopup-content">
+            <h3>Crear nuevo Canal</h3>
+            <div class="inputGroup">
+                <label>Nombre del canal</label>
+                <input type="text" placeholder="ISGC Cumbia Kings" minlength="10" id="newChannelInput">
+            </div>
+            <div class="actionBtns">
+                <button class="destructive" onclick="toggleNewChannelMenu()">Cancelar</button>
+                <button class="primary" onclick="sendNewChannel()">Crear</button>
+            </div>
+        </div>
+    </div>
     <script src="./chat.js"></script>
 </body>
 

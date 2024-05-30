@@ -99,26 +99,17 @@ int main(int argc, char *argv[])
         buffer[n] = '\0';
         char *decoded = decrypt(buffer, KEY);
 
+        printf("\n\nrcv: %s\n", buffer);
+        printf("decoded: %s\n", decoded);
+
         if (strcmp(decoded, "ping") == 0)
         {
             char *pong = encrypt("pong", KEY);
             sendto(listenfd, pong, strlen(pong), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
+            printf("pong: %s", pong);
             close(listenfd);
-
-            printf("==== NEW PING RECEIVED ====\n");
-            printf("from: %s:%d\n", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port));
-            printf("===========================\n");
-
             return 0;
         }
-
-        // Print the buffer content
-        printf("Buffer content: %s\n", buffer);
-
-        printf("\n==== NEW UDP REQ RECEIVED ====\n");
-        printf("from: %s:%d\n", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port));
-        printf("rcv:  %s\n", buffer);
-        printf("data: %s\n", decoded);
 
         // ############### CONNECTION WITH THE CONTROLLER ################
         controllerfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -163,12 +154,23 @@ int main(int argc, char *argv[])
         controller_buffer[controller_n] = '\0';
 
         char *encoded = encrypt(controller_buffer, KEY);
-        sendto(listenfd, encoded, strlen(encoded), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
 
         int broadcast = 0;
 
-        if (strcmp(controller_buffer, "BROADCAST") == 0)
+        if (controller_buffer[0] == 'B')
+        {
             broadcast = 1;
+            for (int i = 0; i < clientCount; i++)
+            {
+                printf("Broadcast %d\n", i);
+                sendto(listenfd, encoded, strlen(encoded), 0, (struct sockaddr *)&connectedClients[i], sizeof(connectedClients[i]));
+            }
+        }
+        else
+        {
+
+            sendto(listenfd, encoded, strlen(encoded), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
+        }
 
         while ((controller_n = recv(controllerfd, controller_buffer, CONTROLLER_BUFFER_SIZE - 1, 0)) > 0)
         {
@@ -183,28 +185,23 @@ int main(int argc, char *argv[])
             }
 
             controller_buffer[controller_n] = '\0';
-            printf("buffer: %s\n", controller_buffer);
 
             char *encoded = encrypt(controller_buffer, KEY);
 
+            printf("is broadcast: %d\n", broadcast);
             if (broadcast)
             {
                 for (int i = 0; i < clientCount; i++)
                 {
-                    sendto(listenfd, encoded, strlen(encoded), 0, (struct sockaddr *)&connectedClients[i], sizeof(cliaddr));
+                    printf("Broadcast %d\n", i);
+                    sendto(listenfd, encoded, strlen(encoded), 0, (struct sockaddr *)&connectedClients[i], sizeof(connectedClients[i]));
                 }
             }
             else
             {
+                printf("Response \n");
                 sendto(listenfd, encoded, strlen(encoded), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
             }
-
-            /*
-            printf("=========== RESPONSE ===========\n");
-            printf("data:  %s\n", controller_buffer);
-            printf("send:  %s\n", encoded);
-            printf("================================\n");
-            */
         }
         close(listenfd);
         close(controllerfd);
