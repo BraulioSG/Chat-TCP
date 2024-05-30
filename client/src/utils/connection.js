@@ -1,57 +1,98 @@
+const { join } = require("path");
 const { encrypt, decrypt } = require("./security");
 const dgram = require('dgram');
 
-class Client {
-    constructor(callback, primaryServer, primaryPort, backupServer, backupPort) {
-        this.callback = callback;
-        this.client = dgram.createSocket('udp4'); // For IPv4
+class Server {
 
-        this.primaryServerAddress = primaryServer;
-        this.primaryServerPort = primaryPort;
 
-        this.backupServerAddress = backupServer;
-        this.backupServerPort = backupPort;
+    constructor(address, port, callback) {
+        this.address = address;
+        this.port = port;
+        this.available = false;
+        this.client = dgram.createSocket('udp4');
 
-        this.key = 10;
-        this.isUsingBackup = false;
+        this.timeout = undefined;
+
+        this.response = ""
 
         this.client.on('message', (msg, _rinfo) => {
-            const data = decrypt(msg, this.key);
-            this.callback(data);
-        });
+            clearTimeout(this.timeout);
+            const data = decrypt(msg, 10);
+            this.available = true;
 
-        this.client.on('error', (err) => {
-            console.error(`Socket error:\n${err.stack}`);
-            this.client.close();
-        });
+            if (data === "pong") {
+                return;
+            }
+            else {
+                this.response = this.response.concat(data);
+                if (data.endsWith("\nEND")) {
 
-        this.client.on('close', () => {
-            console.log('Socket closed');
-        });
+                    callback(this.response);
+                    this.response = "";
+
+                }
+            }
+        })
     }
 
-    send(command) {
-        const req = encrypt(command, this.key);
-        const { serverAddress, serverPort } = this.isUsingBackup
-            ? { serverAddress: this.backupServerAddress, serverPort: this.backupServerPort }
-            : { serverAddress: this.primaryServerAddress, serverPort: this.primaryServerPort };
 
-        this.client.send(req, serverPort, serverAddress, (err) => {
+    send(data) {
+        this.client.send(encrypt(data, 10), this.port, this.address, (err) => {
             if (err) {
-                console.error(err);
+                this.available = false;
                 this.client.close();
-                if (!this.isUsingBackup) {
-                    console.log("Switching to backup server...");
-                    this.isUsingBackup = true;
-                    this.client = dgram.createSocket('udp4'); // Recreate the socket to switch server
-                    this.send(command); // Retry with backup server
-                } else {
-                    console.error("Both primary and backup servers failed.");
-                }
-            } else {
-                console.log(`Sent ${command} to ${serverAddress}:${serverPort}`);
             }
-        });
+        })
+
+        this.timeout = setTimeout(() => {
+            this.available = false;
+            //this.client.close();
+        }, 100)
+    }
+}
+
+class Connection {
+    constructor(callback, ...ports) {
+        this.servers = [];
+
+        ports.forEach(port => {
+            this.servers.push(new Server("127.0.0.1", port, callback));
+        })
+    }
+
+    async getAvailableServer() {
+        let servers = []
+
+        const sendPing = (server) => {
+            return new Promise((resolve, reject) => {
+                server.send("ping");
+
+                setTimeout(() => {
+                    resolve(server.available);
+                }, 110)
+            })
+        }
+
+        for (let i = 0; i < this.servers.length; i++) {
+            const available = await sendPing(this.servers[i]);
+            if (available) {
+                servers.push(this.servers[i]);
+            }
+        }
+
+        return servers;
+    }
+
+    async send(command) {
+        const servers = await this.getAvailableServer();
+
+        if (servers.length < 1) {
+            console.log("no servers available")
+            return null;
+        }
+
+        console.log(servers.map(server => server.port));
+        servers[0].send(command);
     }
 
     setCallback(callback) {
@@ -59,4 +100,4 @@ class Client {
     }
 }
 
-module.exports = Client;
+module.exports = Connection;

@@ -1,6 +1,7 @@
 const net = require('node:net');
 const fs = require('node:fs')
-const { handleCommand } = require('./commandHandler')
+const { handleCommand } = require('./commandHandler');
+const { json } = require('stream/consumers');
 
 // Create a server
 const server = net.createServer((socket) => {
@@ -11,26 +12,12 @@ const server = net.createServer((socket) => {
         console.log(`Received: ${req}`);
 
         const res = handleCommand(req);
-        fs.appendFileSync('./file.json', res, 'utf8')
-        //Command handler
-        //1. Response of Broadcast
-        //2. TO userid1 userid2 userid3 useridn 
-        //3. START
-
-        //4. Split data en chunks de 1024
-        /*
-        {
-            error: string | null,
-            data: object
-        }
-        */
-        //5. END
 
         socket.write(Buffer.from("RESPONSE", 'ascii'));
         socket.write(Buffer.from("TO", 'ascii')); //agregar los usuarios
         socket.write(Buffer.from("START", 'ascii'));
         try {
-            const data = fs.readFileSync('./file.json', 'ascii');
+            const data = JSON.stringify(res);
             const buff = Buffer.from(data, 'ascii')
             for (let i = 0; i < buff.length; i += 1024) {
                 const chunks = buff.slice(i, i + 1024)

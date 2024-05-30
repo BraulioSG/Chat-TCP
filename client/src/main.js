@@ -1,7 +1,8 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('node:path');
-const Client = require('./utils/connection');
+const Connection = require('./utils/connection');
 
+let userId = "usr-000";
 
 const createWindow = () => {
     // Create the browser window.
@@ -13,7 +14,6 @@ const createWindow = () => {
         }
     })
 
-    // and load the index.html of the app.
     mainWindow.loadFile('./src/views/login.html')
 
     // Open the DevTools.
@@ -26,9 +26,17 @@ const createWindow = () => {
 app.whenReady().then(() => {
     const win = createWindow()
 
-    const client = new Client((res) => {
-        win.webContents.send('on-server-response', res)
-    })
+    const client = new Connection((res) => {
+        const [type, to, _start, ...json] = res.split("\n")
+        const members = to.split(" ");
+        json.pop();
+
+        console.log(json);
+
+        if (type === "RESPONSE" || members.indexOf(userId) !== -1) {
+            win.webContents.send('on-server-response', JSON.parse(json.join("\n")))
+        }
+    }, 8080, 8081)
 
     const handleConnection = (_evt, cmd) => {
         client.send(cmd);
@@ -37,15 +45,10 @@ app.whenReady().then(() => {
     ipcMain.on('handle-connection', handleConnection);
 
     app.on('activate', () => {
-        // On macOS it's common to re-create a window in the app when the
-        // dock icon is clicked and there are no other windows open.
         if (BrowserWindow.getAllWindows().length === 0) createWindow()
     })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit()
 })
