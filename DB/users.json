@@ -1,1 +1,1 @@
-[{"username":"DiegoJMZ","password":"secret1234","requests":[],"channels":["ch-001","ch-002","ch-003","ch-004"],"id":"usr-001"},{"username":"BraulioSG","password":"secret1234","requests":[],"channels":["ch-001","ch-002","ch-003","ch-004"],"id":"usr-002"},{"username":"EduardoMV","password":"secret1234","requests":[],"channels":[],"id":"usr-003"}]
+[{"username":"EduardoMV","password":"secret1234","requests":[],"channels":["ch-001"],"id":"usr-001"},{"username":"BraulioSG","password":"secret1234","requests":[],"channels":["ch-001","ch-001"],"id":"usr-002"}]

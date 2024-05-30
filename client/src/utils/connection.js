@@ -5,7 +5,6 @@ const { clearInterval } = require("timers");
 
 class Server {
 
-
     constructor(address, port, callback) {
         this.address = address;
         this.port = port;
@@ -52,7 +51,7 @@ class Server {
             this.available = false;
             console.log(`server timeout ${this.port}`)
             //this.client.close();
-        }, 500)
+        }, 200)
     }
 }
 
@@ -73,7 +72,7 @@ class Connection {
                 server.send("ping");
                 setTimeout(() => {
                     resolve(server.available);
-                }, 100)
+                }, 250)
             })
         }
 
@@ -98,7 +97,7 @@ class Connection {
 
                 if (servers.length >= 1) {
                     servers[0].send(command);
-                    clearInterval;
+                    clearInterval(interval);
                 }
             }, 1000)
 

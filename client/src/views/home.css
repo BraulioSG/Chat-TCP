@@ -356,6 +356,10 @@ aside .channel-new button {
 
 }
 
+.help-chunk .msg {
+    background-color: var(--color-primary);
+}
+
 
 
 .channel-overlay {

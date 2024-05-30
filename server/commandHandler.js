@@ -182,12 +182,13 @@ const services = {
       const token = info[1].split('=')
       const data = db.expelUser(ch_name[1], token[1])
       if (data != null) {
-        return res = {
+        return {
+          type: "BROADCAST",
           error: "null",
           data: { data }
         }
       } else {
-        return res = {
+        return {
           error: "Channel or user does not exist",
           data: "null"
         }
@@ -202,6 +203,7 @@ const services = {
 
       if (data != null) {
         return {
+          type: "BROADCAST",
           error: "null",
           data: { data }
         }
@@ -218,12 +220,9 @@ const services = {
       const token = info[1].split('=')
       const data = db.acccpetUser(ch_name[1], token[1])
 
-      const mems = db.getChannelInformation(ch_name[1], "mems")
-
       if (data != null) {
         return {
           type: "BROADCAST",
-          to: [...mems],
           error: "null",
           data: { data }
         }

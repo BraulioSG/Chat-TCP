@@ -89,10 +89,21 @@ function expelUser(channel, id) {
     let u = getExistingItemsWhere(USER_PATH, { id })[0];
     let ch = getExistingItem(CHANNEL_PATH, channel);
 
-    if (!user || !ch) return null;
-    ch.members = ch.members.filter(m => { m != id })
-    u.channels = u.channels.filter(c => { c != channel })
-    return "User expeled!"
+    if (!u || !ch) return null;
+    ch.members = ch.members.filter(m => m != id)
+    u.channels = u.channels.filter(c => c != channel)
+
+    editExistingItem(CHANNEL_PATH, channel, {
+        members: ch.members,
+        requests: ch.requests
+    })
+
+    editExistingItem(USER_PATH, id, {
+        requests: u.requests,
+        channels: u.channels
+    })
+
+    return { channel: ch, user: u }
 }
 
 function acccpetUser(channel, id) {
@@ -159,7 +170,7 @@ function deleteChannelFromDb(channel, id) {
     if (!ch) return null;
     if (ch.coordinator === id) {
         deleteExistingItem(CHANNEL_PATH, channel)
-        return "Channel deleted correctly!"
+        return { channel: ch }
     }
     else {
         return "You have no perms to do this!"

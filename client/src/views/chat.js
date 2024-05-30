@@ -8,7 +8,6 @@ const requests = document.getElementsByClassName("chat-requests")[0];
 
 const user = JSON.parse(window.sessionStorage.getItem("user-info")).data;
 let channels = {}
-console.log(user);
 
 let activeChat = ""
 
@@ -17,6 +16,8 @@ function switchChannel(channelID) {
     const buttons = Array.from(channelList.getElementsByClassName("channel-btn"));
 
     activeChat = channelID;
+    chat.scrollTop = chat.scrollHeight - chat.clientHeight;
+
 
     channels.forEach(channel => {
         if (channel.id === channelID) {
@@ -40,6 +41,8 @@ function switchChannel(channelID) {
             button.classList.remove("active");
         }
     });
+    chat.scrollTop = chat.scrollHeight - chat.clientHeight;
+
 
 }
 
@@ -58,7 +61,6 @@ function appendNewRequest(channelID, user, userId) {
     denyBtn.classList.add("destroy", "denty-req")
     denyBtn.innerHTML = `<i class="material-icons">block</i>`;
 
-    console.log(`req from : ${user} -> ${userId}`)
 
     approveBtn.onclick = () => {
         //send command to aprove the request
@@ -98,8 +100,10 @@ function createNewChunk(author) {
     chunk.classList.add("msg-chunk");
 
     if (user.username === author) {
-        console.log(":)")
         chunk.classList.add("me-chunk");
+    }
+    if (author === "@Pimientos Chat") {
+        chunk.classList.add("help-chunk");
     }
 
     const span = document.createElement("span");
@@ -162,6 +166,7 @@ function createChannelBtn(channelID, channelName, msgs = [], members = []) {
     }
 
     channelList.appendChild(button);
+    return button
 }
 
 function createChannelDiv(channelID, locked = false) {
@@ -188,11 +193,14 @@ function createChannelDiv(channelID, locked = false) {
     sendReq.classList.add("primary");
     sendReq.innerText = "Eviar solicitud";
 
-    sendReq.disabled = user.requests.indexOf(channelID) !== -1;
 
     sendReq.onclick = () => {
         sendReq.disabled = true;
-        window.connectionAPI.connect(`chns/join:channel=${channelID}&token=${user.id}`)
+        setTimeout(() => {
+            sendReq.disabled = false;
+        }, 1000)
+        if (user.requests.indexOf(channelID) === -1)
+            window.connectionAPI.connect(`chns/join:channel=${channelID}&token=${user.id}`)
     }
 
     container.append(title);
@@ -261,7 +269,7 @@ function newMessage(channelID, author, body) {
     const msg = createNewMessage(body);
     currentChunk.appendChild(msg);
 
-
+    chat.scrollTop = chat.scrollHeight - chat.clientHeight;
 }
 
 function newSystemMessage(channelID, text) {
@@ -282,8 +290,73 @@ function sendMessage() {
     }
 
 
+    tokens = body.split(" ");
+    if (tokens.length >= 1) {
+        const [command, value] = tokens;
+        if (command.startsWith("/")) {
+            if (command === "/help") {
+                newMessage(activeChat, "@Pimientos Chat", `/help -> muestra la lista de comandos del chat.\n/mems -> muestra la lista de miembros del canal.\n/admin -> muestra el coordinador del grupo.\n/exit -> salir del canal${channels[activeChat].coordinator === user.id ? "\n/remove <usuario> -> expulsa a un usuario del grupo.\n/delete -> delete the channel only if you are the only member left" : ""}`)
+                input.value = "";
+                return;
+            }
+            if (command === "/admin") {
+                newMessage(activeChat, "@Pimientos Chat", `El coordinador del chat es:\n${channels[activeChat].coordinator} ${channels[activeChat].coordinator === user.id ? "(tú)" : ""}`)
+                input.value = "";
+                return;
+            }
+            if (command === "/mems") {
+                newMessage(activeChat, "@Pimientos Chat", `Lista de miembros del canal:\n${channels[activeChat].members.map(m => m === user.id ? m + " (tú)" : m).join("\n")}`)
+                input.value = "";
+                return;
+            }
+            if (channels[activeChat].coordinator === user.id) {
+                if (command === "/remove") {
+                    if (!value) {
+                        newMessage(activeChat, "@Pimientos Chat", "Falta el usuario");
+                    }
+                    else if (value === user.id) {
+                        newMessage(activeChat, "@Pimientos Chat", "No te puedes eliminar a ti mismo");
+                    }
+                    else if (channels[activeChat].members.indexOf(value) === -1) {
+                        newMessage(activeChat, "@Pimientos Chat", "Ese usuario no es miembro del canal");
+                    }
+                    else {
+                        window.connectionAPI.connect(`chns/expl:channel=${activeChat}&token=${value}`)
+                    }
+
+                    input.value = "";
+                    return;
+                }
+                if (command === "/delete") {
+                    if (channels[activeChat].members.length > 1) {
+                        newMessage(activeChat, "@Pimientos Chat", "Debes elimiar a los usuarios antes de borrar el canal");
+                        newMessage(activeChat, "@Pimientos Chat", `Miembros por eliminar:\n${channels[activeChat].members.map(m => m === user.id ? "\r" : m).join("\n")}`)
+                    }
+                    else {
+                        window.connectionAPI.connect(`chns/dele:channel=${activeChat}&token=${user.id}`)
+                    }
+                    input.value = "";
+                    return;
+                }
+            }
+            if (command === "/exit") {
+                if (channels[activeChat].coordinator === user.id) {
+                    newMessage(activeChat, "@Pimientos Chat", "No puedes salir del canal, eres el coordinador");
+                }
+                else if (channels[activeChat].members.indexOf(user.id) === -1) {
+                    newMessage(activeChat, "@Pimientos Chat", "No eres miembro de este canal");
+                }
+                else {
+                    window.connectionAPI.connect(`chns/expl:channel=${activeChat}&token=${user.id}`)
+                }
+
+                input.value = "";
+            }
+        }
+    }
+
+
     window.connectionAPI.connect(`msgs/send:channel=${activeChat}&token=${user.id}&body=${body}`)
-    chat.scrollTop = chat.scrollHeight - chat.clientHeight;
     input.value = "";
 }
 
@@ -328,18 +401,15 @@ window.connectionAPI.onResponse((res) => {
                 const locked = ch.members.indexOf(user.id) === -1
                 channels[ch.id] = { ...ch, ...newChannel(ch, locked) }
                 ch.messages.forEach(msg => {
-                    console.log(msg);
                     newMessage(ch.id, msg.author, msg.body);
                 })
 
 
                 if (ch.coordinator === user.id) {
-                    console.log(`Im coordinator of ${ch.name}`)
                     window.connectionAPI.connect(`chns/reqs:channel=${ch.id}`);
                 }
             })
 
-            console.log(channels);
         }
         if (res.desc === "chns/crte") {
             window.connectionAPI.connect(`chns/info:channel=${data}`)
@@ -362,22 +432,51 @@ window.connectionAPI.onResponse((res) => {
             })
         }
 
+
         if (res.desc === "chns/rejc") {
-            console.log("rejected");
         }
 
         if (res.desc === "chns/accp") {
-            channels[data.channel.id].section.classList.remove("locked");
-            channels[data.channel.id].members.push(user.id);
-
             console.log(data);
-            if (activeChat === data.channel) {
+            channels[data.channel.id].section.classList.remove("locked");
+            channels[data.channel.id].members.push(data.user.id);
+
+            if (activeChat === data.channel.id) {
                 input.disabled = false;
                 input.placeholder = "Escribe tu mensaje"
+
+                channelMembers.innerHTML = `<small>${data.channel.members.join(", ")}</small>`;
+
             }
 
-            newSystemMessage(data.channel.id, `${data.user.username} entro al canal`)
 
+            newSystemMessage(data.channel.id, `${data.user.username} entró al canal`)
+        }
+        if (res.desc === "chns/expl") {
+            console.log("exit");
+            channels[data.channel.id] = { ...channels[data.channel.id], ...data.channel }
+            if (activeChat === data.channel.id) {
+                channelMembers.innerHTML = `<small>${data.channel.members.join(", ")}</small>`;
+            }
+
+            newSystemMessage(data.channel.id, `${data.user.username} abandonó el grupo`)
+            if (user.id === data.user.id) {
+                channels[data.channel.id].section.classList.add("locked");
+                input.disabled = true;
+                input.placeholder = "No perteneces a este canal";
+            }
+
+
+        }
+        if (res.desc === "chns/dele") {
+            const chid = data.channel.id;
+            channels[chid].button.remove();
+            channels[chid].section.remove();
+
+            channelTitle.innerText = "Pimientos Chat";
+            channelMembers.innerHTML = ""
+            sendBtn.disabled = true;
+            input.placeholder = "Selecciona un canal para comenzar";
         }
 
     }
